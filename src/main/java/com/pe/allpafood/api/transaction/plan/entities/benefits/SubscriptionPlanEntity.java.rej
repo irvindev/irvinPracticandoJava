@@ -1,0 +1,23 @@
+--- src/main/java/com/pe/allpafood/api/transaction/plan/entities/benefits/SubscriptionPlanEntity.java
++++ src/main/java/com/pe/allpafood/api/transaction/plan/entities/benefits/SubscriptionPlanEntity.java
+@@ -1,6 +1,7 @@
+ package com.pe.allpafood.api.transaction.plan.entities.benefits;
+ 
+ import lombok.AllArgsConstructor;
++import lombok.Data;
+ import lombok.NoArgsConstructor;
+ 
+ import java.util.List;
+@@ -20,6 +21,12 @@ public class SubscriptionPlanEntity {
+     private List<Object> propertiesEntity;
+     private String properties;
+ 
++    /**
++     * JSON array de características descriptivas del plan
++     */
++    private List<String> descriptionListEntity;
++    private String descriptionList;
++
+     private BenefitsEntity benefits;
+ }
+ 
