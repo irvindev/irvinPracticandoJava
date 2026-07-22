@@ -19,10 +19,15 @@ public class MenuEntity {
     private List<DetailEntity<Float>> properties;
     private String propertiesJson;
 
+    private String extraBenefitsJson;
+    private String principalBenefitsJson;
+
     public MenuEntity() {
     }
 
     public MenuEntity(Integer id) {
         this.id = id;
     }
+
+
 }

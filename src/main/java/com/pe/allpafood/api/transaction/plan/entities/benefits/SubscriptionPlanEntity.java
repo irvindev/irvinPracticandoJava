@@ -17,6 +17,10 @@ public class SubscriptionPlanEntity {
     private boolean recommended;
     private Float discountAmount;
     private Integer discountPercent;
+    
     private List<DetailEntity<Float>> propertiesEntity;
     private String properties;
+
+    private List<String> descriptionListEntity;
+    private String descriptionList;            
 }
