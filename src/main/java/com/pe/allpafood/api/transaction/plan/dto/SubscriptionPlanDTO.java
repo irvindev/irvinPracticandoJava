@@ -12,8 +12,7 @@ public record SubscriptionPlanDTO(
         Double previousPrice,
         String level,
         BenefitsEntity benefits,
-        List<DetailEntity<Float>> properties,
-        List<String> descriptionList
+        List<DetailEntity<Float>> properties
 ) {
 
 }

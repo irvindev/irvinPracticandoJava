@@ -10,8 +10,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
 
 import java.sql.ResultSet;
@@ -23,7 +21,6 @@ import java.util.List;
 @Slf4j
 public class SubscriptionPlanRepository implements ISubscriptionPlanRepository {
 
-    private final NamedParameterJdbcTemplate namedParameterJdbcTemplate; 
     private final JdbcTemplate jdbcTemplate;
 
     @Override
@@ -40,8 +37,7 @@ public class SubscriptionPlanRepository implements ISubscriptionPlanRepository {
                 "    b.consumption_total,\n" +
                 "    b.extra_benefits,\n" +
                 "    b.principal_benefits,\n" +
-                "    s.properties,\n" +
-                "    s.description_list\n" +
+                "    s.properties\n" +
                 "FROM \n" +
                 "    tbl_subscription_plan s\n" +
                 "LEFT JOIN \n" +
@@ -135,105 +131,22 @@ public class SubscriptionPlanRepository implements ISubscriptionPlanRepository {
         entity.setPreviousPrice(rs.getDouble(4));
         entity.setLevel(rs.getString(5));
         entity.setAvailable(rs.getBoolean(6));
-        
-        // Nueva línea para description_list (columna 7)
-        String descriptionListJson = rs.getString(7);
-        entity.setDescriptionList(descriptionListJson);
-        entity.setDescriptionListEntity(JsonUtil.convertToObjectList(descriptionListJson, 
-                new TypeReference<List<String>>() {}));
 
         BenefitsEntity benefitsEntity = new BenefitsEntity();
-        benefitsEntity.setDetail(JsonUtil.convertToObjectList(rs.getString(8), 
-                new TypeReference<List<DetailEntity<Integer>>>() {}));
-        benefitsEntity.setBenefitsPeriod(rs.getInt(9));
-        benefitsEntity.setConsumptionTotal(rs.getInt(10));
-        
-        String extraBenefitsJson = rs.getString(11);
-        benefitsEntity.setExtraBenefits(JsonUtil.convertToObjectList(extraBenefitsJson, 
-                new TypeReference<List<String>>() {}));
-        benefitsEntity.setExtraBenefitsJson(extraBenefitsJson);
-        
-        String principalBenefitsJson = rs.getString(12);
-        benefitsEntity.setPrincipalBenefits(JsonUtil.convertToObjectList(principalBenefitsJson, 
-                new TypeReference<List<String>>() {}));
-        benefitsEntity.setPrincipalBenefitsJson(principalBenefitsJson);
-        
-        entity.setBenefits(benefitsEntity);
+        benefitsEntity.setDetail(JsonUtil.convertToObjectList(rs.getString(7), new TypeReference<List<DetailEntity<Integer>>>() {}));
+        benefitsEntity.setBenefitsPeriod(rs.getInt(8));
 
-        String propertiesJson = rs.getString(13);
-        entity.setProperties(propertiesJson);
-        entity.setPropertiesEntity(JsonUtil.convertToObjectList(propertiesJson, 
-                new TypeReference<List<DetailEntity<Float>>>() {}));
+        benefitsEntity.setConsumptionTotal(rs.getInt(9));
+
+        benefitsEntity.setExtraBenefits(JsonUtil.convertToObjectList(rs.getString(10), new TypeReference<List<String>>() {}));
+        benefitsEntity.setPrincipalBenefits(JsonUtil.convertToObjectList(rs.getString(11), new TypeReference<List<String>>() {}));
+
+        entity.setBenefits(benefitsEntity);
+        String propertiesJson = rs.getString(12);
+        entity.setPropertiesEntity(JsonUtil.convertToObjectList(propertiesJson, new TypeReference<List<DetailEntity<Float>>>() {}));
 
         return entity;
     }
 
-    
 
-    @Override
-    public List<SubscriptionPlanEntity> findAllPlansForAdmin() {
-        String sql = "SELECT DISTINCT\n" +
-                "    s.id AS subscriptionPlanId,\n" +
-                "    s.description,\n" +
-                "    s.real_price,\n" +
-                "    s.previous_price AS previousPrice,\n" +
-                "    s.level,\n" +
-                "    s.available," +
-                "    b.detail AS benefitsDetail,\n" +
-                "    b.benefits_period,\n" +
-                "    b.consumption_total,\n" +
-                "    b.extra_benefits,\n" +
-                "    b.principal_benefits,\n" +
-                "    s.properties,\n" +
-                "    s.description_list\n" +
-                "FROM \n" +
-                "    tbl_subscription_plan s\n" +
-                "LEFT JOIN \n" +
-                "    tbl_benefits b\n" +
-                "ON \n" +
-                "    s.id = b.subscription_plan_id;\n";
-        return jdbcTemplate.query(sql, this::mapSubscriptionRow);
-    }
-
-
-    @Override
-    public void updatePlanAndBenefits(SubscriptionPlanEntity entity) {
-        String sqlPlan = """
-            UPDATE tbl_subscription_plan
-            SET description = IFNULL(:description, description),
-                real_price = IFNULL(:realPrice, real_price),
-                previous_price = IFNULL(:previousPrice, previous_price),
-                level = IFNULL(:level, level),
-                properties = IFNULL(:properties, properties),
-                description_list = IFNULL(:descriptionList, description_list)
-            WHERE id = :id
-            """;
-
-        MapSqlParameterSource planParams = new MapSqlParameterSource()
-                .addValue("id", entity.getId())
-                .addValue("description", entity.getDescription())
-                .addValue("realPrice", entity.getRealPrice())
-                .addValue("previousPrice", entity.getPreviousPrice())
-                .addValue("level", entity.getLevel())
-                .addValue("properties", entity.getProperties())
-                .addValue("descriptionList", entity.getDescriptionList());
-
-        namedParameterJdbcTemplate.update(sqlPlan, planParams);
-
-        if (entity.getBenefits() != null) {
-            String sqlBenefits = """
-                UPDATE tbl_benefits
-                SET extra_benefits = IFNULL(:extraBenefits, extra_benefits),
-                    principal_benefits = IFNULL(:principalBenefits, principal_benefits)
-                WHERE subscription_plan_id = :planId AND assigned_plan = true
-                """;
-
-            MapSqlParameterSource benefitsParams = new MapSqlParameterSource()
-                    .addValue("planId", entity.getId())
-                    .addValue("extraBenefits", entity.getBenefits().getExtraBenefitsJson())
-                    .addValue("principalBenefits", entity.getBenefits().getPrincipalBenefitsJson());
-
-            namedParameterJdbcTemplate.update(sqlBenefits, benefitsParams);
-        }
-    }
 }
