@@ -13,6 +13,4 @@ public record SubscriptionPlanDTO(
         String level,
         BenefitsEntity benefits,
         List<DetailEntity<Float>> properties
-) {
-
-}
+) {}
