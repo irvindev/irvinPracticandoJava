@@ -11,7 +11,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import java.util.List;
 
 @Configuration
-@Profile({"dev"})
+@Profile({"dev", "int"})
 public class CorsConfig {
 
     @Value("${security.cors.front.url}")
