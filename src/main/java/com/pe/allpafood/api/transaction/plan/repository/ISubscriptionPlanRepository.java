@@ -13,4 +13,7 @@ public interface ISubscriptionPlanRepository {
     SubscriptionPlanEntity findPriceByPlanId(int planId);
     BenefitsEntity findBenefitsByPlanId(int planId);
     Float findRealPriceByPlanId(int planId);
+
+    List<SubscriptionPlanEntity> findAllPlansForAdmin();
+    void updatePlanAndBenefits(SubscriptionPlanEntity entity);
 }

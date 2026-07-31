@@ -19,4 +19,7 @@ public class SubscriptionPlanEntity {
     private Integer discountPercent;
     private List<DetailEntity<Float>> propertiesEntity;
     private String properties;
+
+    private List<String> descriptionListEntity; // deserializado
+    private String descriptionList;      
 }

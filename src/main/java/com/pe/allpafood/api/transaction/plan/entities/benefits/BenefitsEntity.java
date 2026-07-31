@@ -15,4 +15,7 @@ public class BenefitsEntity {
     private SubscriptionPlanEntity subscriptionPlan;
     private List<String> extraBenefits;
     private List<String> principalBenefits;
+
+    private String extraBenefitsJson;
+    private String principalBenefitsJson;
 }
