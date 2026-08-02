@@ -1,6 +1,8 @@
 package com.pe.allpafood.api.gateway.admin.menu;
 
 import com.pe.allpafood.api.transaction.catalog.bussiness.IMenusService;
+import com.pe.allpafood.api.transaction.catalog.bussiness.impl.ScheduleMenu;
+import com.pe.allpafood.api.transaction.catalog.entity.MenuCalendar;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.FileSystemResource;
@@ -10,11 +12,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDate;
+import java.util.List;
 
 @RestController
 @RequestMapping("/public/menu")
@@ -22,6 +27,8 @@ import java.nio.file.Path;
 @Slf4j
 public class PublicController {
     private final IMenusService menuService;
+    private final ScheduleMenu scheduleMenu;
+
     @GetMapping("/image/{fileName}")
     public ResponseEntity<FileSystemResource> getImage(@PathVariable String fileName) {
         log.debug("getImage {}",fileName);
@@ -32,7 +39,6 @@ public class PublicController {
             Path path = fileBytes.getFile().toPath();
             String mimeType = Files.probeContentType(path);
 
-            // Solo aceptar tipos MIME que empiecen con "image/"
             if (mimeType != null && mimeType.startsWith("image/")) {
                 mediaType = MediaType.parseMediaType(mimeType);
             } else {
@@ -51,5 +57,13 @@ public class PublicController {
         return ResponseEntity.ok()
                 .contentType(mediaType)
                 .body(fileBytes);
+    }
+
+    @GetMapping("/schedule")
+    public ResponseEntity<List<MenuCalendar>> getScheduledMenu(
+            @RequestParam LocalDate startDate,
+            @RequestParam LocalDate endDate
+    ) {
+        return ResponseEntity.ok(scheduleMenu.getScheduledMenu(startDate, endDate));
     }
 }
