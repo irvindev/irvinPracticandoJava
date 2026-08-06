@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
+
 import java.util.List;
 
 public record FormUserDTO(
@@ -15,8 +16,13 @@ public record FormUserDTO(
         @NotNull(message = "{error.lastname.notnull}")
         String lastname,
 
+        //@Email(message = "{error.email.invalid}")
+        //@NotNull(message = "{error.email.notnull}")
+        //String email,
+
         @Email(message = "{error.email.invalid}")
         @NotNull(message = "{error.email.notnull}")
+        @Size(max = 150, message = "El correo no puede exceder 150 caracteres.")
         String email,
 
         @Size(min = 8, message = "{error.password.size}")

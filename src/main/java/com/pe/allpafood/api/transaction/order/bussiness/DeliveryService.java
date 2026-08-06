@@ -5,6 +5,7 @@ import com.pe.allpafood.api.transaction.auth.dto.UpdateMotorizedDTO;
 import com.pe.allpafood.api.core.enums.StatusDeliveryEnum;
 import com.pe.allpafood.api.core.exception.BusinessException;
 import com.pe.allpafood.api.core.utils.converter.TimeUtil;
+import com.pe.allpafood.api.core.utils.generator.CodesUtil;
 import com.pe.allpafood.api.gateway.order_admin.dto.AssignDeliveryPoint;
 import com.pe.allpafood.api.transaction.order.entity.OrderUserEntity;
 import com.pe.allpafood.api.transaction.order.repository.impl.DeliveryRepository;
@@ -21,6 +22,7 @@ import com.pe.allpafood.api.transaction.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -31,6 +33,9 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import com.pe.allpafood.api.core.utils.generator.CodesUtil;
+
+import org.springframework.dao.DataIntegrityViolationException;
 
 @Service
 @RequiredArgsConstructor
@@ -74,7 +79,8 @@ public class DeliveryService {
         log.info("Create new user delivery {}",user);
         try{
             UserEntity userEntity = new UserEntity();
-            userEntity.setId(user.email().split("@")[0]);
+            //userEntity.setId(user.email().split("@")[0]);
+            userEntity.setId(CodesUtil.randomId());
             userEntity.setEmail(user.email());
             userEntity.setPhoneNumber(user.phoneNumber());
             userEntity.setPassword(passwordEncoder.encode(user.password()));
@@ -92,9 +98,11 @@ public class DeliveryService {
             profileEntity.setLastname(user.lastname());
             profileEntity.setDistrict(String.join(",", user.districts()));
             profileRepository.saveProfile(profileEntity);
-        }catch (DuplicateKeyException e){
-            throw new BusinessException("El usuario ya existe");
-        }
+            }catch (DuplicateKeyException e){
+                throw new BusinessException("El usuario ya existe");
+            }catch (DataIntegrityViolationException e){
+                throw new BusinessException("Los datos ingresados exceden el límite permitido.");
+            }
     }
 
     @Transactional
