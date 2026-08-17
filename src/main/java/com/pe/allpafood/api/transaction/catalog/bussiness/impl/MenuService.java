@@ -66,14 +66,16 @@ public class MenuService implements IMenusService {
         if(dto.getId()!=null ){
             menuRepository.updateMenu(menuEntity);
             if (hasTypes) menuTypeRepository.updateStatusByMenuId(dto.getId(),0);
-        }else menuRepository.insertMenu(menuEntity);
-
+        }else{
+            int generatedId = menuRepository.insertMenu(menuEntity);
+            menuEntity.setId(generatedId);
+        }
 
         if (hasTypes){
             List<MenuTypeEntity> menuTypes = dto.getTypes().stream()
                 .map(type -> {
                     MenuTypeEntity entity = new MenuTypeEntity();
-                    entity.setMenuId(dto.getId());
+                    entity.setMenuId(menuEntity.getId());
                     entity.setType(type);
                     entity.setStatus(1);
                     return entity;

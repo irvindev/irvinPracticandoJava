@@ -19,6 +19,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+
 @RestController
 @RequestMapping("/register")
 @RequiredArgsConstructor
@@ -61,4 +62,14 @@ public class RegisterController {
         userRegisterService.uploadMassive(file,corporationId,planId,complements);
         return  ResponseEntity.ok(new GenericMessage("CSV cargado correctamente."));
     }
+
+    @PostMapping("/upload-massive-csv")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<GenericMessage> uploadUsersCsv(@RequestParam("file") MultipartFile file) throws BusinessException {
+
+        log.info("Iniciando uploadUsersCsv");
+        userRegisterService.bulkRegisterFromCsv(file);
+        return ResponseEntity.ok(new GenericMessage("Usuarios registrados correctamente."));
+    }
+
 }

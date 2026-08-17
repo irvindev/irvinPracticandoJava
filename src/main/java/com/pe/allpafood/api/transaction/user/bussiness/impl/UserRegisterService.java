@@ -1,6 +1,9 @@
 package com.pe.allpafood.api.transaction.user.bussiness.impl;
 
+import com.opencsv.CSVParser;
+import com.opencsv.CSVParserBuilder;
 import com.opencsv.CSVReader;
+import com.opencsv.CSVReaderBuilder;
 import com.pe.allpafood.api.core.utils.generator.CodesUtil;
 import com.pe.allpafood.api.core.exception.BusinessException;
 import com.pe.allpafood.api.transaction.notification.bussiness.impl.NotificationAsyncExecutor;
@@ -23,6 +26,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.opencsv.CSVParser;
+import com.opencsv.CSVParserBuilder;
+import com.opencsv.CSVReaderBuilder;
+import java.io.BufferedReader;
+
+import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.time.LocalDateTime;
 
@@ -124,6 +133,83 @@ public class UserRegisterService {
         }catch (Exception e){
             log.info("Error en la lectura del archivo : {}",e.getMessage());
             throw  new BusinessException(UserErroEnum.CSV_UPLOAD_ERR.getValue());
+        }
+    }
+
+
+    @Transactional(rollbackFor = {BusinessException.class, Exception.class})
+    public void bulkRegisterFromCsv(MultipartFile file) throws BusinessException {
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(file.getInputStream()))) {
+
+            String headerLine = br.readLine();
+            if (headerLine == null) {
+                throw new BusinessException("El archivo CSV está vacío.");
+            }
+
+            char separator = headerLine.contains(";") ? ';' : ',';
+            log.info("[bulkRegisterFromCsv] Separador detectado: '{}'", separator);
+
+            CSVParser parser = new CSVParserBuilder()
+                    .withSeparator(separator)
+                    .build();
+
+            try (CSVReader reader = new CSVReaderBuilder(br)
+                    .withCSVParser(parser)
+                    .build()) {
+
+                String[] line;
+                int rowNum = 1;
+
+                while ((line = reader.readNext()) != null) {
+                    rowNum++;
+                    if (line.length < 6) {
+                        log.warn("[bulkRegisterFromCsv] Fila {} incompleta, se omite. Columnas encontradas: {}", rowNum, line.length);
+                        continue;
+                    }
+
+                    String name = line[0].trim();
+                    String lastname = line[1].trim();
+                    String email = line[2].trim();
+                    String phoneNumber = line[3].trim();
+                    String documentNumber = line[4].trim();
+                    String password = line[5].trim();
+
+                    if (userRepository.findByPhoneNumber(phoneNumber) != null) {
+                        log.warn("[bulkRegisterFromCsv] Teléfono ya existe, fila {}: {}", rowNum, phoneNumber);
+                        continue;
+                    }
+
+                    UserEntity userEntity = new UserEntity();
+                    userEntity.setId(CodesUtil.randomId());
+                    userEntity.setEmail(email);
+                    userEntity.setPhoneNumber(phoneNumber);
+                    userEntity.setDocumentNumber(documentNumber);
+                    userEntity.setPassword(passwordEncoder.encode(password));
+                    userEntity.setProvider("user-pass");
+                    userEntity.setVerified(true);
+                    userEntity.setRegistrationCompleted(true);
+                    userEntity.setProfileCompleted(false);
+                    userEntity.setCorporateUser(false);
+
+                    try {
+                        userRepository.insertByCsv(userEntity);
+                    } catch (DuplicateKeyException e) {
+                        log.error("[bulkRegisterFromCsv] Duplicado fila {}: {}", rowNum, e.getMessage());
+                        continue;
+                    }
+
+                    userRepository.insertUserRole(userEntity.getId(), 1); // 1 = USER
+
+                    ProfileEntity profile = new ProfileEntity();
+                    profile.setUserId(userEntity.getId());
+                    profile.setName(name);
+                    profile.setLastname(lastname);
+                    profileRepository.saveProfile(profile);
+                }
+            }
+        } catch (Exception e) {
+            log.error("[bulkRegisterFromCsv] Error en la lectura del archivo: {}", e.getMessage());
+            throw new BusinessException(UserErroEnum.CSV_UPLOAD_ERR.getValue());
         }
     }
 
