@@ -2,6 +2,8 @@ package com.pe.allpafood.api.transaction.auth.controller;
 
 import com.pe.allpafood.api.core.exception.BusinessException;
 import com.pe.allpafood.api.core.utils.dto.GenericMessage;
+import com.pe.allpafood.api.transaction.auth.dto.AdminCreateUserDTO;
+import com.pe.allpafood.api.transaction.auth.dto.AdminCreateUserResponseDTO;
 import com.pe.allpafood.api.transaction.auth.dto.FormUserDTO;
 import com.pe.allpafood.api.transaction.user.dto.ProfileDTO;
 import com.pe.allpafood.api.transaction.user.entities.UserEntity;
@@ -19,6 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.pe.allpafood.api.transaction.auth.dto.AdminCreateUserDTO;
 
 @RestController
 @RequestMapping("/register")
@@ -72,4 +75,12 @@ public class RegisterController {
         return ResponseEntity.ok(new GenericMessage("Usuarios registrados correctamente."));
     }
 
+    @PostMapping("/admin-create")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<AdminCreateUserResponseDTO> createUser(@Valid @RequestBody AdminCreateUserDTO request) throws BusinessException {
+
+        log.info("Iniciando createUser (individual)");
+        String userId = userRegisterService.registerSingleUser(request);
+        return ResponseEntity.ok(new AdminCreateUserResponseDTO(userId, "Usuario registrado correctamente."));
+    }
 }

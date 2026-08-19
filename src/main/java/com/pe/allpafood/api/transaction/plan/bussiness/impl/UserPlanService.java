@@ -1,17 +1,27 @@
 package com.pe.allpafood.api.transaction.plan.bussiness.impl;
 
+import java.time.LocalDate;
+import java.util.List;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.pe.allpafood.api.core.exception.BusinessException;
 import com.pe.allpafood.api.core.utils.converter.JsonUtil;
 import com.pe.allpafood.api.core.utils.dto.PageResult;
+import com.pe.allpafood.api.core.utils.generator.CodesUtil;
 import com.pe.allpafood.api.gateway.admin.plans.dto.UpdatePlanUserDTO;
 import com.pe.allpafood.api.gateway.admin.plans.dto.UserPlanDTO;
+import com.pe.allpafood.api.transaction.plan.entities.Credits;
 import com.pe.allpafood.api.transaction.plan.entities.UserPlanEntity;
-import com.pe.allpafood.api.transaction.plan.entities.benefits.ConsumeBenefits;
+import com.pe.allpafood.api.transaction.plan.entities.benefits.BenefitsEntity;
+import com.pe.allpafood.api.transaction.plan.entities.benefits.SubscriptionPlanEntity;
 import com.pe.allpafood.api.transaction.plan.repository.IUserPlanRepository;
-import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.stereotype.Service;
+import com.pe.allpafood.api.transaction.user.entities.UserEntity;
 
-import java.time.LocalDate;
+import lombok.RequiredArgsConstructor;
+
+import java.util.Date;
 
 @Service
 @RequiredArgsConstructor
@@ -54,5 +64,6 @@ public class UserPlanService {
         if(userPlanDTO.consumedBenefits() != null) userPlan.setConsumedBenefitsJson(JsonUtil.convertToJsonString(userPlanDTO.consumedBenefits()));
         userPlanRepository.updatePlanUser(userPlan);
     }
+
 
 }

@@ -1,14 +1,19 @@
 package com.pe.allpafood.api.gateway.admin.plans;
 
+import com.pe.allpafood.api.core.exception.BusinessException;
 import com.pe.allpafood.api.core.utils.dto.GenericMessage;
 import com.pe.allpafood.api.gateway.admin.plans.dto.UpdatePlanUserDTO;
 import com.pe.allpafood.api.transaction.plan.bussiness.impl.UserPlanService;
+import com.pe.allpafood.api.transaction.plan.dto.AdminAssignPlanDTO;
+
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
 
 @RestController
 @RequestMapping("/admin/user-plan")
@@ -38,6 +43,20 @@ public class UserPlanAdminController {
     ){
         userPlanService.updateUserPlan(planUserId, updatePlanUserDTO, userId);
         return ResponseEntity.ok(new GenericMessage("Ok"));
+    }
+
+    @PostMapping("/assign-plan")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<GenericMessage> assignPlan(
+            @Valid @RequestBody AdminAssignPlanDTO request) throws BusinessException {
+
+        log.info("[assignPlan] Asignando plan {} a usuario {} con {} adiciones", 
+                 request.planId(), request.userId(), 
+                 request.complements() != null ? request.complements().size() : 0);
+
+        userPlanService.assignPlanByAdmin(request.userId(), request.planId(), request.complements());
+
+        return ResponseEntity.ok(new GenericMessage("Plan asignado correctamente al usuario."));
     }
 
 }

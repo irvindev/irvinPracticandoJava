@@ -10,6 +10,7 @@ import com.pe.allpafood.api.transaction.notification.bussiness.impl.Notification
 import com.pe.allpafood.api.transaction.notification.entity.TemplateRequest;
 import com.pe.allpafood.api.transaction.notification.entity.WhatsappRequest;
 import com.pe.allpafood.api.transaction.notification.bussiness.impl.WhatsappNotification;
+import com.pe.allpafood.api.transaction.auth.dto.AdminCreateUserDTO;
 import com.pe.allpafood.api.transaction.auth.dto.FormUserDTO;
 import com.pe.allpafood.api.transaction.user.repository.ProfileRepository;
 import com.pe.allpafood.api.transaction.user.repository.UserRepository;
@@ -25,6 +26,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import com.pe.allpafood.api.transaction.auth.dto.AdminCreateUserDTO;
 
 import com.opencsv.CSVParser;
 import com.opencsv.CSVParserBuilder;
@@ -211,6 +213,46 @@ public class UserRegisterService {
             log.error("[bulkRegisterFromCsv] Error en la lectura del archivo: {}", e.getMessage());
             throw new BusinessException(UserErroEnum.CSV_UPLOAD_ERR.getValue());
         }
+    }
+
+    @Transactional(rollbackFor = {DuplicateKeyException.class, BusinessException.class})
+    public String registerSingleUser(AdminCreateUserDTO dto) throws BusinessException {
+
+        if (userRepository.findByPhoneNumber(dto.phoneNumber()) != null) {
+            throw new BusinessException("El número de teléfono ya se encuentra registrado.");
+        }
+
+        String userId = CodesUtil.randomId();
+        
+        UserEntity userEntity = new UserEntity();
+        userEntity.setId(userId);
+        userEntity.setEmail(dto.email());
+        userEntity.setPhoneNumber(dto.phoneNumber());
+        userEntity.setDocumentNumber(dto.documentNumber());
+        userEntity.setPassword(passwordEncoder.encode(dto.password()));
+        userEntity.setProvider("user-pass");
+        userEntity.setVerified(true);
+        userEntity.setRegistrationCompleted(true);
+        userEntity.setProfileCompleted(false);
+        userEntity.setCorporateUser(false);
+
+        try {
+            userRepository.insertByCsv(userEntity);
+        } catch (DuplicateKeyException e) {
+            log.error("[registerSingleUser] Duplicado: {}", e.getMessage());
+            throw new BusinessException(UserErroEnum.DATA_DUPLICATED.getValue());
+        }
+
+        userRepository.insertUserRole(userEntity.getId(), 1); // 1 = USER
+
+        ProfileEntity profile = new ProfileEntity();
+        profile.setUserId(userId);
+        profile.setName(dto.name());
+        profile.setLastname(dto.lastname());
+        profileRepository.saveProfile(profile);
+
+        log.info("[registerSingleUser] Usuario {} registrado exitosamente", userId);
+        return userId;
     }
 
     @Transactional
