@@ -50,11 +50,11 @@ public class UserPlanAdminController {
     public ResponseEntity<GenericMessage> assignPlan(
             @Valid @RequestBody AdminAssignPlanDTO request) throws BusinessException {
 
-        log.info("[assignPlan] Asignando plan {} a usuario {} con {} adiciones", 
-                 request.planId(), request.userId(), 
-                 request.complements() != null ? request.complements().size() : 0);
+        log.info("[assignPlan] Asignando plan {} a usuario {} - método de pago: {} / {}",
+                request.planId(), request.userId(), request.paymentMethodType(), request.paymentMethodId());
 
-        userPlanService.assignPlanByAdmin(request.userId(), request.planId(), request.complements());
+        userPlanService.assignPlanByAdmin(request.userId(), request.planId(),
+                request.paymentMethodType(), request.paymentMethodId());
 
         return ResponseEntity.ok(new GenericMessage("Plan asignado correctamente al usuario."));
     }

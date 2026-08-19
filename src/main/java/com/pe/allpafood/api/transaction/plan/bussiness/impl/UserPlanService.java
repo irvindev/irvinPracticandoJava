@@ -1,6 +1,7 @@
 package com.pe.allpafood.api.transaction.plan.bussiness.impl;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
@@ -9,25 +10,27 @@ import org.springframework.transaction.annotation.Transactional;
 import com.pe.allpafood.api.core.exception.BusinessException;
 import com.pe.allpafood.api.core.utils.converter.JsonUtil;
 import com.pe.allpafood.api.core.utils.dto.PageResult;
-import com.pe.allpafood.api.core.utils.generator.CodesUtil;
 import com.pe.allpafood.api.gateway.admin.plans.dto.UpdatePlanUserDTO;
 import com.pe.allpafood.api.gateway.admin.plans.dto.UserPlanDTO;
-import com.pe.allpafood.api.transaction.plan.entities.Credits;
 import com.pe.allpafood.api.transaction.plan.entities.UserPlanEntity;
 import com.pe.allpafood.api.transaction.plan.entities.benefits.BenefitsEntity;
-import com.pe.allpafood.api.transaction.plan.entities.benefits.SubscriptionPlanEntity;
 import com.pe.allpafood.api.transaction.plan.repository.IUserPlanRepository;
+import com.pe.allpafood.api.transaction.plan.repository.impl.SubscriptionPlanRepository;
 import com.pe.allpafood.api.transaction.user.entities.UserEntity;
+import com.pe.allpafood.api.transaction.user.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
-
-import java.util.Date;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class UserPlanService {
 
     private final IUserPlanRepository userPlanRepository;
+    private final UserRepository userRepository;
+    private final SubscriptionPlanRepository subscriptionPlanRepository;
+    private final SubscriptionService subscriptionService;
 
     public void changeNeedDayInformation(String userId, String needDay){
         UserPlanEntity userPlan = new UserPlanEntity();
@@ -65,5 +68,23 @@ public class UserPlanService {
         userPlanRepository.updatePlanUser(userPlan);
     }
 
+    @Transactional(rollbackFor = {BusinessException.class, Exception.class})
+    public void assignPlanByAdmin(String userId, Integer planId, String paymentMethodType, String paymentMethodId) throws BusinessException {
+
+        UserEntity user = userRepository.findById(userId);
+        if (user == null) {
+            throw new BusinessException("Usuario no encontrado.");
+        }
+
+        BenefitsEntity benefitsEntity = subscriptionPlanRepository.findBenefitsByPlanId(planId);
+        if (benefitsEntity == null) {
+            throw new BusinessException("El plan seleccionado no existe.");
+        }
+
+        subscriptionService.subscribeUserToPlan(userId, benefitsEntity, new ArrayList<>(), null, null);
+
+        log.info("[assignPlanByAdmin] Plan {} asignado exitosamente a usuario {} (paymentMethodType={}, paymentMethodId={} — no persistido en factura por falta de dirección de facturación)",
+                planId, userId, paymentMethodType, paymentMethodId);
+    }
 
 }
